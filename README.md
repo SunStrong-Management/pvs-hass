@@ -15,6 +15,11 @@ The `pypvs` library is available at https://github.com/SunStrong-Management/pypv
 
 ## Prerequisites
 
+- PVS firmware version
+  - 61839 Per this comment: https://github.com/SunStrong-Management/pvs-hass/issues/7#issuecomment-3372639832
+  - 61840 Per this PR: https://github.com/krbaker/hass-sunpower/pull/127
+  - or above
+
 - A recent installation of Home Assistant
 - HACS (Home Assistant Community Store) installed
 - The PVS connected to your network via Wi-Fi or Ethernet
