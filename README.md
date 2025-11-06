@@ -36,6 +36,8 @@ and probably should be removed altogether.
 6. In the Home Assistant UI go to "Configuration" -> "Integrations" click "+" and search for "PVS".
    * The main configuration is `<IP/Hostname>[:port]`. Check your router configuration for the IP of your PVS
 
+Note: If prompted for a password, use the last 5 Characters in your PVS Serial. Easily located in the System Info in the Sunstrong Management App.
+
 
 ## Options (available from 'configure' once integration is setup)
 
