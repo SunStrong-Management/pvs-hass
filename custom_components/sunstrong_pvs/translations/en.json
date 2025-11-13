@@ -13,6 +13,9 @@
       "cpu_usage": {
         "name": "CPU usage"
       },
+      "sw_version": {
+        "name": "Firmware version"
+      },
       "current_power_production": {
         "name": "Current Power Production"
       },
