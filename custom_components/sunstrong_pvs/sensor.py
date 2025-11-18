@@ -98,7 +98,9 @@ INVERTER_SENSORS = (
         key=LAST_REPORTED_KEY,
         translation_key=LAST_REPORTED_KEY,
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda inverter: datetime.datetime.fromtimestamp(inverter.last_report_date, tz=datetime.timezone.utc),
+        value_fn=lambda inverter: datetime.datetime.fromtimestamp(
+            inverter.last_report_date, tz=datetime.timezone.utc
+        ),
     ),
     PVSInverterSensorEntityDescription(
         key="lifetime_production",
@@ -178,6 +180,13 @@ GATEWAY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         value_fn=attrgetter("cpu_usage_percent"),
+    ),
+    PVSGatewaySensorEntityDescription(
+        key="sw_version",
+        translation_key="sw_version",
+        value_fn=attrgetter("software_version"),
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:information-outline",
     ),
 )
 
@@ -528,6 +537,7 @@ TRANSFER_SWITCH_SENSORS = (
     ),
 )
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: PVSConfigEntry,
@@ -604,12 +614,14 @@ class PVSGatewayEntity(PVSSensorBaseEntity):
             hw_version=gateway.hardware_version,
             serial_number=self.pvs_serial_num,
         )
+
     @property
     def native_value(self) -> int | str | None:
         """Return the state of the sensor."""
         gateway = self.data.gateway
         assert gateway is not None
         return self.entity_description.value_fn(gateway)
+
 
 class PVSInverterEntity(PVSSensorBaseEntity):
     """PVS inverter entity."""
@@ -656,6 +668,7 @@ class PVSInverterEntity(PVSSensorBaseEntity):
             return None
         return self.entity_description.value_fn(inverters[self._serial_number])
 
+
 class PVSMeterEntity(PVSSensorBaseEntity):
     """PVS meter entity."""
 
@@ -697,6 +710,7 @@ class PVSMeterEntity(PVSSensorBaseEntity):
             return None
         return self.entity_description.value_fn(meters[self._serial_number])
 
+
 class PVSESSEntity(PVSSensorBaseEntity):
     """PVS ESS entity."""
 
@@ -737,6 +751,7 @@ class PVSESSEntity(PVSSensorBaseEntity):
             )
             return None
         return self.entity_description.value_fn(ess[self._serial_number])
+
 
 class PVSTransferSwitchEntity(PVSSensorBaseEntity):
     """PVS transfer switch entity."""
