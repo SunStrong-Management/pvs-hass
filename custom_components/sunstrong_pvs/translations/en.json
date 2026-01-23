@@ -147,6 +147,42 @@
       },
       "v_supply_v": {
         "name": "MIDC Supply Voltage"
+      },
+      "live_production_power": {
+        "name": "Live Production Power"
+      },
+      "live_production_energy": {
+        "name": "Live Production Energy"
+      },
+      "live_net_consumption_power": {
+        "name": "Live Net Consumption Power"
+      },
+      "live_net_consumption_energy": {
+        "name": "Live Net Consumption Energy"
+      },
+      "live_site_load_power": {
+        "name": "Live Site Load Power"
+      },
+      "live_site_load_energy": {
+        "name": "Live Site Load Energy"
+      },
+      "live_battery_energy": {
+        "name": "Live Battery Energy"
+      },
+      "live_battery_power": {
+        "name": "Live Battery Power"
+      },
+      "live_battery_soc": {
+        "name": "Live Battery State of Charge"
+      },
+      "live_backup_time_remaining": {
+        "name": "Live Backup Time Remaining"
+      },
+      "live_mid_state": {
+        "name": "Live MIDC State"
+      },
+      "live_data_timestamp": {
+        "name": "Live Data Timestamp"
       }
     },
     "switch": {
@@ -165,6 +201,16 @@
       },
       "need_password": {
         "description": "Enter the password for the PVS gateway."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_period_s": "Update interval (seconds)",
+          "enable_live_data": "Enable live data (WebSocket)"
+        }
       }
     }
   }
