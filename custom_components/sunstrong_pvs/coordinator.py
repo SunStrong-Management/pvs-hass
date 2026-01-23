@@ -2,30 +2,33 @@
 
 from __future__ import annotations
 
-import contextlib
-import datetime
-from datetime import timedelta
+import asyncio
 import logging
+from datetime import timedelta
 from typing import Any
 
 from pypvs.pvs import PVS
-from pypvs.exceptions import PVSError, PVSAuthenticationError
+from pypvs.pvs_websocket import ConnectionState, PVSWebSocket
+from pypvs.exceptions import PVSError
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME, CONF_PASSWORD
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    EVENT_HOMEASSISTANT_STOP,
+    EVENT_HOMEASSISTANT_STARTED,
+)
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-import homeassistant.util.dt as dt_util
 
-from .const import INVALID_AUTH_ERRORS, OPTION_UPDATE_PERIOD_S, OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE
-
-SCAN_INTERVAL = timedelta(seconds=60)
-
-TOKEN_REFRESH_CHECK_INTERVAL = timedelta(days=1)
-STALE_TOKEN_THRESHOLD = timedelta(days=30).total_seconds()
-NOTIFICATION_ID = "pvs_notification"
+from .const import (
+    INVALID_AUTH_ERRORS,
+    OPTION_UPDATE_PERIOD_S,
+    OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE,
+    OPTION_ENABLE_LIVE_DATA,
+    OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +50,18 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._setup_complete = False
         self.pvs_firmware = ""
 
+        # WebSocket for live data (managed by pypvs)
+        host = entry.data.get(CONF_HOST)
+        self._websocket = PVSWebSocket(host) if host else None
+        self._websocket_listener_remove: CALLBACK_TYPE | None = None
+        self._websocket_state_listener_remove: CALLBACK_TYPE | None = None
+        self._stop_listener: CALLBACK_TYPE | None = None
+        self._started_listener_remove: CALLBACK_TYPE | None = None
+        self._websocket_task: asyncio.Task | None = None
+
+        # Track live data entity listeners by var_name for granular updates
+        self._live_data_listeners: dict[str, list[CALLBACK_TYPE]] = {}
+
         super().__init__(
             hass,
             _LOGGER,
@@ -55,15 +70,164 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             always_update=False,
         )
 
+        # Listen for Home Assistant stop event to ensure cleanup
+        self._stop_listener = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._async_ha_stop_listener
+        )
+
     def _get_update_interval(self) -> timedelta:
         """Get new update interval."""
-        scan_interval_s = self.entry.options.get(OPTION_UPDATE_PERIOD_S, OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE)
+        scan_interval_s = self.entry.options.get(
+            OPTION_UPDATE_PERIOD_S, OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE
+        )
         return timedelta(seconds=scan_interval_s)
+
+    @property
+    def live_data(self):
+        """Return current live data from websocket."""
+        if self._websocket:
+            return self._websocket.live_data
+        return None
+
+    @property
+    def websocket_connected(self) -> bool:
+        """Return True if websocket is connected."""
+        return self._websocket is not None and self._websocket.is_connected
 
     @callback
     def _async_mark_setup_complete(self) -> None:
-        """Mark setup as complete and setup token refresh if needed."""
+        """Mark setup as complete and setup live data if needed."""
         self._setup_complete = True
+        self._async_setup_live_data_tracker()
+
+    @callback
+    def _async_setup_live_data_tracker(self) -> None:
+        """Set up live data tracking if enabled."""
+        live_data_enabled = self.entry.options.get(
+            OPTION_ENABLE_LIVE_DATA, OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE
+        )
+
+        if live_data_enabled and self._websocket:
+            # Only start if not already connected
+            if not self._websocket.is_connected:
+                if self.hass.is_running:
+                    self._websocket_task = self.hass.async_create_task(
+                        self._async_start_websocket()
+                    )
+                else:
+                    # Cancel any existing listener before adding new one
+                    if self._started_listener_remove:
+                        self._started_listener_remove()
+                    self._started_listener_remove = self.hass.bus.async_listen_once(
+                        EVENT_HOMEASSISTANT_STARTED,
+                        self._async_ha_started_listener,
+                    )
+        else:
+            # Live data disabled, stop websocket if running
+            self._async_stop_live_data_tracking()
+
+    @callback
+    def _async_stop_live_data_tracking(self) -> None:
+        """Stop live data tracking."""
+        # Cancel pending startup task
+        if self._websocket_task and not self._websocket_task.done():
+            self._websocket_task.cancel()
+            self._websocket_task = None
+
+        # Cancel started listener
+        if self._started_listener_remove:
+            self._started_listener_remove()
+            self._started_listener_remove = None
+
+        # Remove websocket listeners
+        if self._websocket_listener_remove:
+            self._websocket_listener_remove()
+            self._websocket_listener_remove = None
+
+        if self._websocket_state_listener_remove:
+            self._websocket_state_listener_remove()
+            self._websocket_state_listener_remove = None
+
+        # Schedule disconnect (don't await in callback)
+        if self._websocket and self._websocket.is_connected:
+            self.hass.async_create_task(self._async_disconnect_websocket())
+
+    async def _async_disconnect_websocket(self) -> None:
+        """Disconnect websocket and wait for completion."""
+        if self._websocket:
+            await self._websocket.disconnect()
+
+    async def _async_start_websocket(self) -> None:
+        """Start WebSocket connection."""
+        if not self._websocket:
+            return
+
+        # Remove any existing listeners before adding new ones
+        if self._websocket_listener_remove:
+            self._websocket_listener_remove()
+        if self._websocket_state_listener_remove:
+            self._websocket_state_listener_remove()
+
+        # Add listeners and track removal functions
+        self._websocket_listener_remove = self._websocket.add_listener(
+            self._handle_live_data_update
+        )
+        self._websocket_state_listener_remove = self._websocket.add_state_listener(
+            self._handle_websocket_state_change
+        )
+
+        await self._websocket.connect()
+
+    @callback
+    def _handle_websocket_state_change(self, state: ConnectionState) -> None:
+        """Handle websocket connection state changes."""
+        if state == ConnectionState.CONNECTED:
+            _LOGGER.info("Live data websocket connected")
+        elif state == ConnectionState.DISCONNECTED:
+            _LOGGER.debug("Live data websocket disconnected")
+        elif state == ConnectionState.CONNECTING:
+            _LOGGER.debug("Live data websocket connecting...")
+
+    @callback
+    def _handle_live_data_update(self, changed_vars: set[str]) -> None:
+        """Handle live data updates from websocket."""
+        self._async_notify_live_data_listeners(changed_vars)
+
+    @callback
+    def async_add_live_data_listener(
+        self, var_name: str, update_callback: CALLBACK_TYPE
+    ) -> CALLBACK_TYPE:
+        """Add a listener for a specific live data variable.
+
+        Returns a callback to remove the listener.
+        """
+        if var_name not in self._live_data_listeners:
+            self._live_data_listeners[var_name] = []
+
+        self._live_data_listeners[var_name].append(update_callback)
+
+        def remove_listener() -> None:
+            if var_name in self._live_data_listeners:
+                try:
+                    self._live_data_listeners[var_name].remove(update_callback)
+                except ValueError:
+                    pass  # Already removed
+                if not self._live_data_listeners[var_name]:
+                    del self._live_data_listeners[var_name]
+
+        return remove_listener
+
+    @callback
+    def _async_notify_live_data_listeners(self, changed_vars: set[str]) -> None:
+        """Notify only the listeners for variables that changed."""
+        for var_name in changed_vars:
+            if var_name in self._live_data_listeners:
+                # Iterate over a copy to handle removals during iteration
+                for update_callback in list(self._live_data_listeners[var_name]):
+                    try:
+                        update_callback()
+                    except Exception:
+                        _LOGGER.exception("Error in live data listener callback")
 
     async def _async_setup_and_authenticate(self) -> None:
         """Set up and authenticate with the PVS."""
@@ -86,11 +250,9 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if not self._setup_complete:
                     await self._async_setup_and_authenticate()
                     self._async_mark_setup_complete()
-                # dump all received data in debug mode to assist troubleshooting
                 pvs_data = await pvs.update()
             except INVALID_AUTH_ERRORS as err:
                 if self._setup_complete and tries == 0:
-                    # token likely expired or firmware changed, try to re-authenticate
                     self._setup_complete = False
                     continue
                 raise ConfigEntryAuthFailed from err
@@ -100,4 +262,50 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.debug("PVS data: %s", pvs_data)
             return pvs_data.raw
 
-        raise RuntimeError("Unreachable code in _async_update_data")  # pragma: no cover
+        raise RuntimeError("Unreachable code in _async_update_data")
+
+    async def async_shutdown(self) -> None:
+        """Shutdown the coordinator."""
+        # Stop live data tracking (removes listeners, cancels tasks)
+        self._async_stop_live_data_tracking()
+
+        # Wait for websocket disconnect to complete
+        if self._websocket:
+            await self._websocket.disconnect()
+
+        # Remove stop listener
+        if self._stop_listener:
+            self._stop_listener()
+            self._stop_listener = None
+
+        await super().async_shutdown()
+
+    @callback
+    def _async_ha_started_listener(self, event) -> None:
+        """Handle Home Assistant started event."""
+        self._started_listener_remove = None  # Listener auto-removes after firing
+        self._websocket_task = self.hass.async_create_task(
+            self._async_start_websocket()
+        )
+
+    @callback
+    def _async_ha_stop_listener(self, event) -> None:
+        """Handle Home Assistant stop event."""
+        self.hass.async_create_task(self.async_shutdown())
+
+    @callback
+    def async_update_options(self) -> None:
+        """Update options and reconfigure live data tracking."""
+        self.update_interval = self._get_update_interval()
+
+        # Check if live data setting changed
+        live_data_enabled = self.entry.options.get(
+            OPTION_ENABLE_LIVE_DATA, OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE
+        )
+
+        if live_data_enabled and not self.websocket_connected:
+            # Enable live data
+            self._async_setup_live_data_tracker()
+        elif not live_data_enabled and self.websocket_connected:
+            # Disable live data
+            self._async_stop_live_data_tracking()
