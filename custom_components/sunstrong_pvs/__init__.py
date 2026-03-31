@@ -42,14 +42,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:
 
     entry.runtime_data = coordinator
 
+    # Register options update listener
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
 
+async def _async_options_updated(hass: HomeAssistant, entry: PVSConfigEntry) -> None:
+    """Handle options update."""
+    coordinator: PVSUpdateCoordinator = entry.runtime_data
+    coordinator.async_update_options()
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:
     """Unload a config entry."""
     coordinator: PVSUpdateCoordinator = entry.runtime_data
+
+    # Shutdown coordinator (stops websocket, cleans up listeners)
+    await coordinator.async_shutdown()
+
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
@@ -80,7 +93,4 @@ async def async_remove_config_entry_device(
             for switch in pvs_data.transfer_switches:
                 if str(switch) in dev_ids:
                     return False
-        # if pvs_data.gateway:
-        #     if str(pvs_data.serial_number) in dev_ids:
-        #         return False
     return True
