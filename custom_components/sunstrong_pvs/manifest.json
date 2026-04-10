@@ -6,7 +6,7 @@
   "documentation": "https://github.com/SunStrong-Management/pvs-hass",
   "iot_class": "local_polling",
   "loggers": ["pypvs"],
-  "requirements": ["bcrypt", "pypvs"],
+  "requirements": ["bcrypt", "pypvs>=0.2.8"],
   "zeroconf": [
     {
       "type": "_pvs6._tcp.local."
