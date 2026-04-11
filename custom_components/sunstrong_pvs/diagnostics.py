@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 TO_REDACT_CONFIG = {"password"}
 
 # Data keys that could contain sensitive info
-TO_REDACT_DATA = {"mac"}
+TO_REDACT_DATA = {"mac", "serial_number", "sn"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -41,9 +41,7 @@ async def async_get_config_entry_diagnostics(
     data: dict[str, Any] = {}
 
     if pvs_data.gateway:
-        data["gateway"] = async_redact_data(
-            asdict(pvs_data.gateway), TO_REDACT_DATA
-        )
+        data["gateway"] = asdict(pvs_data.gateway)
 
     if pvs_data.inverters:
         data["inverters"] = {
@@ -82,5 +80,5 @@ async def async_get_config_entry_diagnostics(
         telemetry_enabled = "error"
 
     diag["telemetry_websocket_enabled"] = telemetry_enabled
-    diag["data"] = data
+    diag["data"] = async_redact_data(data, TO_REDACT_DATA)
     return diag
