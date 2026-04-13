@@ -8,7 +8,7 @@ from datetime import timedelta
 from typing import Any
 
 from pypvs.pvs import PVS
-from pypvs.pvs_websocket import ConnectionState, PVSWebSocket
+from pypvs.pvs_websocket import ConnectionState
 from pypvs.exceptions import PVSError
 
 from homeassistant.config_entries import ConfigEntry
@@ -50,9 +50,10 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._setup_complete = False
         self.pvs_firmware = ""
 
-        # WebSocket for live data (managed by pypvs)
-        host = entry.data.get(CONF_HOST)
-        self._websocket = PVSWebSocket(host) if host else None
+        # WebSocket for live data — use pvs.get_websocket() so the
+        # enable_callback is wired up and telemetry is re-enabled on
+        # each connection attempt.
+        self._websocket = pvs.get_websocket() if entry.data.get(CONF_HOST) else None
         self._websocket_listener_remove: CALLBACK_TYPE | None = None
         self._websocket_state_listener_remove: CALLBACK_TYPE | None = None
         self._stop_listener: CALLBACK_TYPE | None = None
