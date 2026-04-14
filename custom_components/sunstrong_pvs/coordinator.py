@@ -295,18 +295,14 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hass.async_create_task(self.async_shutdown())
 
     @callback
-    def async_update_options(self) -> None:
-        """Update options and reconfigure live data tracking."""
-        self.update_interval = self._get_update_interval()
-
-        # Check if live data setting changed
-        live_data_enabled = self.entry.options.get(
+    def should_reload_on_options_update(self) -> bool:
+        """Return True if the live data option changed (requires entity reload)."""
+        new_live_data = self.entry.options.get(
             OPTION_ENABLE_LIVE_DATA, OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE
         )
+        return new_live_data != self.websocket_connected
 
-        if live_data_enabled and not self.websocket_connected:
-            # Enable live data
-            self._async_setup_live_data_tracker()
-        elif not live_data_enabled and self.websocket_connected:
-            # Disable live data
-            self._async_stop_live_data_tracking()
+    @callback
+    def async_update_options(self) -> None:
+        """Update options that don't require a reload (e.g. poll interval)."""
+        self.update_interval = self._get_update_interval()

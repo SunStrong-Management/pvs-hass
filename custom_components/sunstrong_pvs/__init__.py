@@ -51,9 +51,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: PVSConfigEntry) -> None:
-    """Handle options update."""
+    """Handle options update — reload if live data setting changed."""
     coordinator: PVSUpdateCoordinator = entry.runtime_data
-    coordinator.async_update_options()
+    if coordinator.should_reload_on_options_update():
+        await hass.config_entries.async_reload(entry.entry_id)
+    else:
+        coordinator.async_update_options()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:
