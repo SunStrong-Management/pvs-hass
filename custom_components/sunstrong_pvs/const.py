@@ -1,16 +1,14 @@
 """Constants for the Detailed Hello World Push integration."""
 
 from typing import Final
+from homeassistant.const import Platform
+from pypvs.pvs import PVSAuthenticationError, PVSCommunicationError
 
 # This is the internal name of the integration, it should also match the directory
 # name for the integration.
 DOMAIN: Final = "sunstrong_pvs"
 
 DEFAULT_NAME: Final = "PVS"
-
-from pypvs.pvs import PVSAuthenticationError, PVSCommunicationError
-
-from homeassistant.const import Platform
 
 PLATFORMS = [
     # Platform.BINARY_SENSOR,

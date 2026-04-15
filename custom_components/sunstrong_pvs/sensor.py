@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import datetime
 import logging
 from operator import attrgetter
-from typing import TYPE_CHECKING
 
 from pypvs.models.inverter import PVSInverter
 from pypvs.models.meter import PVSMeter

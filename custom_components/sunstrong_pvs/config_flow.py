@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import logging
-from types import MappingProxyType
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from awesomeversion import AwesomeVersion
 from pypvs.pvs import PVS
-from pypvs.exceptions import PVSError, PVSAuthenticationError
+from pypvs.exceptions import PVSError
 
 import voluptuous as vol
 
@@ -174,7 +172,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 pvs = await validate_input(self.hass, host)
-            except INVALID_AUTH_ERRORS as e:
+            except INVALID_AUTH_ERRORS:
                 errors["base"] = "Cannot connect to the PVS."
             except PVSError as e:
                 errors["base"] = "cannot_connect"

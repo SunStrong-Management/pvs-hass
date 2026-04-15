@@ -44,19 +44,13 @@ async def async_get_config_entry_diagnostics(
         data["gateway"] = asdict(pvs_data.gateway)
 
     if pvs_data.inverters:
-        data["inverters"] = {
-            sn: asdict(inv) for sn, inv in pvs_data.inverters.items()
-        }
+        data["inverters"] = {sn: asdict(inv) for sn, inv in pvs_data.inverters.items()}
 
     if pvs_data.meters:
-        data["meters"] = {
-            sn: asdict(meter) for sn, meter in pvs_data.meters.items()
-        }
+        data["meters"] = {sn: asdict(meter) for sn, meter in pvs_data.meters.items()}
 
     if pvs_data.ess:
-        data["ess"] = {
-            sn: asdict(ess) for sn, ess in pvs_data.ess.items()
-        }
+        data["ess"] = {sn: asdict(ess) for sn, ess in pvs_data.ess.items()}
 
     if pvs_data.transfer_switches:
         data["transfer_switches"] = {
