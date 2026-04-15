@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version in manifest.json
+        run: |
+          version="${{ github.event.release.tag_name }}"
+          version="${version#v}"
+          jq --arg v "$version" '.version = $v' \
+            "${{ github.workspace }}/custom_components/sunstrong_pvs/manifest.json" > tmp.json \
+            && mv tmp.json "${{ github.workspace }}/custom_components/sunstrong_pvs/manifest.json"
+
+      - name: Validate manifest.json
+        run: cat "${{ github.workspace }}/custom_components/sunstrong_pvs/manifest.json" | python3 -m json.tool
+
+      - name: Create zip archive
+        run: |
+          cd "${{ github.workspace }}/custom_components/sunstrong_pvs"
+          zip -r sunstrong_pvs.zip .
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: custom_components/sunstrong_pvs/sunstrong_pvs.zip
