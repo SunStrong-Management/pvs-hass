@@ -130,3 +130,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Home Assistant dev config (keep configuration.yaml, ignore runtime artifacts)
+config/*
+!config/configuration.yaml
