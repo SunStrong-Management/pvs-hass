@@ -152,6 +152,46 @@ clearing caches or using another browser.
 [power-factor]: https://en.wikipedia.org/wiki/Power_factor
 [sunpower-us]: https://us.sunpower.com/products/solar-panels
 
+## Development
+
+This project includes a [devcontainer](https://containers.dev/) configuration for a fully reproducible development environment. It works with VS Code, GitHub Codespaces, or any devcontainer-compatible tool.
+
+### Getting started
+
+1. **Open in a devcontainer** — open this repository in VS Code and select *Reopen in Container* when prompted, or launch it directly in GitHub Codespaces.
+2. **Wait for setup** — the `postCreateCommand` runs `scripts/setup`, which installs all Python dependencies from `requirements.txt`.
+3. **Start Home Assistant** — run the develop script:
+
+   ```bash
+   scripts/develop
+   ```
+
+   Home Assistant will start on **port 8123** with the `sunstrong_pvs` custom component loaded automatically. The devcontainer forwards this port, so you can open the HA UI in your browser.
+
+4. **Complete onboarding** — on first launch, open `http://localhost:8123` and create an initial user account. Then add the PVS integration through *Settings → Devices & Services → Add Integration → PVS*.
+
+### Available scripts
+
+| Script | Description |
+| --- | --- |
+| `scripts/setup` | Installs Python dependencies |
+| `scripts/develop` | Starts Home Assistant in debug mode with the custom component |
+| `scripts/lint` | Formats and lints the codebase with [Ruff](https://docs.astral.sh/ruff/) |
+
+### Project layout
+
+```
+custom_components/sunstrong_pvs/   # The integration source code
+config/                            # HA config directory (created on first run, gitignored)
+scripts/                           # Development helper scripts
+```
+
+### Tips
+
+- The `scripts/develop` script sets `PYTHONPATH` so that `custom_components/sunstrong_pvs` is discoverable by Home Assistant without symlinks.
+- Edits to files under `custom_components/` take effect after restarting Home Assistant (Ctrl+C the running script and re-run `scripts/develop`).
+- Run `scripts/lint` before committing to ensure consistent formatting.
+
 ## Credits
 
 This integration is based on the work of the following projects:
