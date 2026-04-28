@@ -198,6 +198,14 @@ GATEWAY_SENSORS = (
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:information-outline",
     ),
+    PVSGatewaySensorEntityDescription(
+        key="flashwear_type_b",
+        translation_key="flashwear_type_b",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=attrgetter("flashwear_type_b_percent"),
+    ),
 )
 
 METER_SENSORS = (
@@ -669,6 +677,7 @@ async def async_setup_entry(
         entities.extend(
             PVSGatewayEntity(coordinator, description, pvs_data.gateway)
             for description in GATEWAY_SENSORS
+            if description.value_fn(pvs_data.gateway) is not None
         )
 
     if pvs_data.inverters:
