@@ -188,7 +188,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 pvs = await validate_input(self.hass, host)
             except INVALID_AUTH_ERRORS:
-                errors["base"] = "Cannot connect to the PVS."
+                errors["base"] = "cannot_connect"
             except PVSError as e:
                 errors["base"] = "cannot_connect"
                 description_placeholders = {"reason": str(e)}
