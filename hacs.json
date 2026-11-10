@@ -3,5 +3,7 @@
   "domains": ["sensor"],
   "homeassistant": "2026.8.0",
   "iot_class": ["Local Poll"],
-  "render_readme": true
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "sunstrong_pvs.zip"
 }
