@@ -9,7 +9,7 @@ from typing import Any
 
 from pypvs.pvs import PVS
 from pypvs.pvs_websocket import ConnectionState
-from pypvs.exceptions import PVSError
+from pypvs.exceptions import PVSAuthenticationError, PVSError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -23,7 +23,6 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
-    INVALID_AUTH_ERRORS,
     OPTION_UPDATE_PERIOD_S,
     OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE,
     OPTION_ENABLE_LIVE_DATA,
@@ -252,7 +251,7 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     await self._async_setup_and_authenticate()
                     self._async_mark_setup_complete()
                 pvs_data = await pvs.update()
-            except INVALID_AUTH_ERRORS as err:
+            except PVSAuthenticationError as err:
                 if self._setup_complete and tries == 0:
                     self._setup_complete = False
                     continue
