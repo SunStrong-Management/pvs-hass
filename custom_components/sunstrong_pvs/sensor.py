@@ -33,7 +33,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfTime,
 )
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -680,34 +680,6 @@ async def async_setup_entry(
             if description.value_fn(pvs_data.gateway) is not None
         )
 
-    if pvs_data.inverters:
-        entities.extend(
-            PVSInverterEntity(coordinator, description, inverter)
-            for description in INVERTER_SENSORS
-            for inverter in pvs_data.inverters.values()
-        )
-
-    if pvs_data.meters:
-        entities.extend(
-            PVSMeterEntity(coordinator, description, meter)
-            for description in METER_SENSORS
-            for meter in pvs_data.meters.values()
-        )
-
-    if pvs_data.ess:
-        entities.extend(
-            PVSESSEntity(coordinator, description, ess)
-            for description in ESS_SENSORS
-            for ess in pvs_data.ess.values()
-        )
-
-    if pvs_data.transfer_switches:
-        entities.extend(
-            PVSTransferSwitchEntity(coordinator, description, transfer_switch)
-            for description in TRANSFER_SWITCH_SENSORS
-            for transfer_switch in pvs_data.transfer_switches.values()
-        )
-
     # Add live data sensors if enabled
     live_data_enabled = config_entry.options.get(
         OPTION_ENABLE_LIVE_DATA, OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE
@@ -721,6 +693,37 @@ async def async_setup_entry(
         )
 
     async_add_entities(entities)
+
+    # The PVS only reports inverters while they produce, so devices can
+    # appear after setup, e.g. when it was set up at night.
+    known_serials: set[str] = set()
+
+    @callback
+    def _async_add_new_devices() -> None:
+        """Add entities for devices that were not reported before."""
+        data = coordinator.pvs.data
+        if data is None:
+            return
+        new_entities: list[Entity] = []
+        for devices, entity_class, descriptions in (
+            (data.inverters, PVSInverterEntity, INVERTER_SENSORS),
+            (data.meters, PVSMeterEntity, METER_SENSORS),
+            (data.ess, PVSESSEntity, ESS_SENSORS),
+            (data.transfer_switches, PVSTransferSwitchEntity, TRANSFER_SWITCH_SENSORS),
+        ):
+            for device in (devices or {}).values():
+                if device.serial_number in known_serials:
+                    continue
+                known_serials.add(device.serial_number)
+                new_entities.extend(
+                    entity_class(coordinator, description, device)
+                    for description in descriptions
+                )
+        if new_entities:
+            async_add_entities(new_entities)
+
+    _async_add_new_devices()
+    config_entry.async_on_unload(coordinator.async_add_listener(_async_add_new_devices))
 
 
 class PVSSensorBaseEntity(PVSBaseEntity, SensorEntity):
