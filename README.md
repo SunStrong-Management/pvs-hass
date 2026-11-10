@@ -140,6 +140,45 @@ This is the data from the MIDC (Transfer Switch) device. These sensors provide s
 | `MIDC Supply Voltage` | V    | MIDC supply voltage                |
 
 
+## Migrating from hass-sunpower
+
+There is no automatic migration from [hass-sunpower](https://github.com/krbaker/hass-sunpower), but both integrations read the same values from the PVS, so you can keep the history of your sensors, including the Energy dashboard, by giving the new entities the entity IDs of the old ones:
+
+1. Set up this integration and write down the entity IDs of the hass-sunpower sensors you want to keep, for example the ones used in the Energy dashboard.
+2. Remove the hass-sunpower integration. Its history stays in the database.
+3. For each sensor, open the matching entity of this integration (see the table below) in **Settings** > **Devices & services** > **Entities**, and in its settings change the **Entity ID** to the old one.
+
+The renamed entity continues the history and long-term statistics of the old entity ID. Readings recorded under the new entity ID before the rename are not moved, so rename the entities soon after setting up the integration.
+
+The sensors are on the device with the same serial number as in hass-sunpower:
+
+| Device   | hass-sunpower     | This integration           |
+| -------- | ----------------- | -------------------------- |
+| Meter    | `KWh To Home`     | `Positive Lifetime Energy` |
+| Meter    | `KWh To Grid`     | `Negative Lifetime Energy` |
+| Meter    | `Lifetime Power`  | `Net Lifetime Energy`      |
+| Meter    | `Power`           | `3-Phase Power`            |
+| Meter    | `KVA Reactive`    | `Reactive Power 3-Phase`   |
+| Meter    | `KVA Apparent`    | `Apparent Power 3-Phase`   |
+| Meter    | `Power Factor`    | `Total Power Factor`       |
+| Meter    | `Frequency`       | `Frequency`                |
+| Meter    | `Supply Volts`    | `Line-to-Line Voltage`     |
+| Meter    | `Leg 1 Volts`     | `Phase 1-N Voltage`        |
+| Meter    | `Leg 2 Volts`     | `Phase 2-N Voltage`        |
+| Meter    | `Leg 1 Amps`      | `Current Phase 1`          |
+| Meter    | `Leg 2 Amps`      | `Current Phase 2`          |
+| Meter    | `Leg 1 KW`        | `Power Phase 1`            |
+| Meter    | `Leg 2 KW`        | `Power Phase 2`            |
+| Inverter | `Lifetime Power`  | `Lifetime Production`      |
+| Inverter | `Power`           | `Current Power Production` |
+| Inverter | `Voltage`         | `Production Voltage`       |
+| Inverter | `Amps`            | `Production Current`       |
+| Inverter | `Frequency`       | `Frequency`                |
+| Inverter | `Temperature`     | `Heatsink Temperature`     |
+
+The PVS sensors of hass-sunpower (for example `System Load` or `Memory Used`) report different values than the gateway sensors of this integration, and the MPPT sensors of the inverters are not available.
+
+
 ## Debugging
 
 ### Installed through HACS but I can't find it in the integrations list
@@ -200,5 +239,5 @@ This integration is based on the work of the following projects:
 - [home-assistant/integration-enphase_envoy](https://www.home-assistant.io/integrations/enphase_envoy/)
 
 Please note that this integration is not a continuation of the above projects, but rather a separate implementation inspired by them.
-Thus, transitioning, for example, from the `hass-sunpower` integration is not possible, and users will need to just use this
-integration as a replacement.
+There is no automatic migration from the `hass-sunpower` integration, but you can keep the history of your sensors, see
+[Migrating from hass-sunpower](#migrating-from-hass-sunpower).
