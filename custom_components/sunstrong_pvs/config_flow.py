@@ -7,13 +7,14 @@ import logging
 from typing import Any
 
 from pypvs.pvs import PVS
-from pypvs.exceptions import PVSError
+from pypvs.exceptions import PVSAuthenticationError, PVSError
 
 import voluptuous as vol
 
 from homeassistant.components import zeroconf
 from homeassistant.config_entries import (
     SOURCE_REAUTH,
+    SOURCE_RECONFIGURE,
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
@@ -52,6 +53,17 @@ async def validate_input(
     return pvs
 
 
+async def validate_password(hass: HomeAssistant, host: str, password: str) -> None:
+    """Validate the password by reading a variable that requires a login."""
+    pvs = PVS(
+        session=async_get_clientsession(hass, False),
+        host=host,
+        user="ssm_owner",
+        password=password,
+    )
+    await pvs.setup()
+
+
 class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for a PVS."""
 
@@ -77,7 +89,9 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
         """Generate schema."""
         schema: VolDictType = {}
 
-        if self.ip_address:
+        if self.source == SOURCE_RECONFIGURE:
+            schema[vol.Required(CONF_HOST, default=self.ip_address)] = str
+        elif self.ip_address:
             schema[vol.Required(CONF_HOST, default=self.ip_address)] = vol.In(
                 [self.ip_address]
             )
@@ -149,6 +163,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle configuration by re-auth."""
         self._reauth_entry = self._get_reauth_entry()
+        self.password = self._reauth_entry.data.get(CONF_PASSWORD)
         if unique_id := self._reauth_entry.unique_id:
             await self.async_set_unique_id(unique_id, raise_on_progress=False)
         return await self.async_step_user()
@@ -184,13 +199,12 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.ip_address = host
                 name = self._async_pvs_name()
 
-                if self.source == SOURCE_REAUTH:
-                    return self.async_update_reload_and_abort(
-                        self._reauth_entry,
-                        data=self._reauth_entry.data | user_input,
+                if self.source in (SOURCE_REAUTH, SOURCE_RECONFIGURE):
+                    await self.async_set_unique_id(
+                        pvs.serial_number, raise_on_progress=False
                     )
-
-                if not self.unique_id:
+                    self._abort_if_unique_id_mismatch()
+                elif not self.unique_id:
                     await self.async_set_unique_id(pvs.serial_number)
                     name = self._async_pvs_name()
 
@@ -234,13 +248,33 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             if CONF_PASSWORD not in user_input:
                 return await self.async_step_need_password()
-            name = self._async_pvs_name()
+            try:
+                await validate_password(
+                    self.hass, self.ip_address, user_input[CONF_PASSWORD]
+                )
+            except PVSAuthenticationError:
+                errors["base"] = "invalid_auth"
+            except PVSError:
+                errors["base"] = "cannot_connect"
+            except Exception:
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                data_updates = {CONF_HOST: self.ip_address} | user_input
+                if self.source == SOURCE_REAUTH:
+                    return self.async_update_reload_and_abort(
+                        self._get_reauth_entry(), data_updates=data_updates
+                    )
+                if self.source == SOURCE_RECONFIGURE:
+                    return self.async_update_reload_and_abort(
+                        self._get_reconfigure_entry(), data_updates=data_updates
+                    )
 
-            # CONF_NAME is still set for legacy backwards compatibility
-            return self.async_create_entry(
-                title=name,
-                data={CONF_NAME: name, CONF_HOST: self.ip_address} | user_input,
-            )
+                name = self._async_pvs_name()
+                # CONF_NAME is still set for legacy backwards compatibility
+                return self.async_create_entry(
+                    title=name, data={CONF_NAME: name} | data_updates
+                )
 
         return self.async_show_form(
             step_id="need_password",
@@ -259,7 +293,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         assert config_entry is not None
         self.ip_address = config_entry.data[CONF_HOST]
-        self.password = config_entry.data[CONF_PASSWORD]
+        self.password = config_entry.data.get(CONF_PASSWORD)
         return await self.async_step_user()
 
 
