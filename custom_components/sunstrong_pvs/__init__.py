@@ -40,6 +40,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:
             f"found {pvs.serial_number}"
         )
 
+    # register the gateway before child devices reference it through via_device_id
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, pvs.serial_number)},
+        manufacturer="SunStrong Management",
+        name="PVS Gateway",
+        serial_number=pvs.serial_number,
+    )
+
     entry.runtime_data = coordinator
 
     # Register options update listener

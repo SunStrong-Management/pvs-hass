@@ -773,7 +773,7 @@ class PVSInverterEntity(PVSSensorBaseEntity):
             name=f"MI {self._serial_number}",
             manufacturer="SunStrong Management",
             model="Inverter",
-            via_device=(DOMAIN, self.pvs_serial_num),
+            via_device_id=self.pvs_device_id,
         )
 
     @property
@@ -819,7 +819,7 @@ class PVSMeterEntity(PVSSensorBaseEntity):
             name=f"Meter {self._serial_number}",
             manufacturer="SunStrong Management",
             model="Meter",
-            via_device=(DOMAIN, self.pvs_serial_num),
+            via_device_id=self.pvs_device_id,
         )
 
     @property
@@ -861,7 +861,7 @@ class PVSESSEntity(PVSSensorBaseEntity):
             name=f"ESS {self._serial_number}",
             manufacturer="SunStrong Management",
             model="ESS",
-            via_device=(DOMAIN, self.pvs_serial_num),
+            via_device_id=self.pvs_device_id,
         )
 
     @property
@@ -903,7 +903,7 @@ class PVSTransferSwitchEntity(PVSSensorBaseEntity):
             name=f"Transfer Switch {self._serial_number}",
             manufacturer="SunStrong Management",
             model="Transfer Switch",
-            via_device=(DOMAIN, self.pvs_serial_num),
+            via_device_id=self.pvs_device_id,
         )
 
     @property
@@ -940,7 +940,7 @@ class PVSLiveDataEntity(PVSSensorBaseEntity):
             manufacturer="SunStrong Management",
             model="PVS Live Data",
             name="PVS Live Data",
-            via_device=(DOMAIN, self.pvs_serial_num),
+            via_device_id=self.pvs_device_id,
         )
 
     async def async_added_to_hass(self) -> None:
