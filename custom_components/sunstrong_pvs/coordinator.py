@@ -291,6 +291,8 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @callback
     def _async_ha_stop_listener(self, event) -> None:
         """Handle Home Assistant stop event."""
+        # A listen_once listener is removed when it fires
+        self._stop_listener = None
         self.hass.async_create_task(self.async_shutdown())
 
     @callback
