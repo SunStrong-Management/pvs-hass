@@ -205,6 +205,17 @@
       "need_password": {
         "description": "Enter the password for the PVS gateway."
       }
+    },
+    "error": {
+      "invalid_auth": "Invalid password. The password is the last 5 characters of the PVS serial number.",
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Device is already configured",
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Re-configuration was successful",
+      "unique_id_mismatch": "The PVS at this address has a different serial number than the one configured."
     }
   },
   "options": {
