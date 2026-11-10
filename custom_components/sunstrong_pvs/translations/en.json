@@ -16,6 +16,9 @@
       "sw_version": {
         "name": "Firmware version"
       },
+      "flashwear_type_b": {
+        "name": "Flash wear (Type B)"
+      },
       "current_power_production": {
         "name": "Current Power Production"
       },
