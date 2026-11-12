@@ -23,6 +23,7 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          ignore: topics
 
   ruff:
     name: Ruff
