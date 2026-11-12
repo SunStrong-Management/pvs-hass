@@ -343,4 +343,7 @@ class PVSOptionsFlowHandler(OptionsFlowWithReload):
                 },
             ),
             errors=errors,
+            description_placeholders={
+                "min_interval": str(OPTION_UPDATE_PERIOD_S_MIN_VALUE)
+            },
         )

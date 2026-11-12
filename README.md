@@ -43,7 +43,13 @@ Note: If prompted for a password, use the last 5 Characters in your PVS Serial. 
 
 ### Data update interval (seconds)
 
-This sets how fast the integration will try to get updated info from the PVS.
+This sets how fast the integration will try to get updated info from the PVS. The default is 60 seconds and the minimum is 15 seconds.
+
+The PVS refreshes inverter data only every 5 minutes, so polling faster mostly fetches the same values while adding load on the PVS. For real-time power, enable live data instead.
+
+### Enable live data (WebSocket)
+
+This streams site-level values from the PVS over a WebSocket, independent of the update interval: PV production, grid and site load power and energy, and battery power, energy and state of charge. Per-inverter values still come from polling.
 
 
 ## Devices

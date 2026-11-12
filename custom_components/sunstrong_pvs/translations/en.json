@@ -227,6 +227,9 @@
           "enable_live_data": "Enable live data (WebSocket)"
         }
       }
+    },
+    "error": {
+      "MIN_INTERVAL": "The update interval must be at least {min_interval} seconds."
     }
   }
 }

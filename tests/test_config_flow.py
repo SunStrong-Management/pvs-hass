@@ -11,6 +11,7 @@ from custom_components.sunstrong_pvs.const import (
     DOMAIN,
     OPTION_ENABLE_LIVE_DATA,
     OPTION_UPDATE_PERIOD_S,
+    OPTION_UPDATE_PERIOD_S_MIN_VALUE,
 )
 from homeassistant.config_entries import SOURCE_USER, SOURCE_ZEROCONF
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD
@@ -274,11 +275,11 @@ async def test_reconfigure_other_pvs(hass: HomeAssistant) -> None:
     "user_input",
     [
         pytest.param(
-            {OPTION_UPDATE_PERIOD_S: 60, OPTION_ENABLE_LIVE_DATA: False},
+            {OPTION_UPDATE_PERIOD_S: 30, OPTION_ENABLE_LIVE_DATA: False},
             id="update_period",
         ),
         pytest.param(
-            {OPTION_UPDATE_PERIOD_S: 10, OPTION_ENABLE_LIVE_DATA: True},
+            {OPTION_UPDATE_PERIOD_S: 60, OPTION_ENABLE_LIVE_DATA: True},
             id="live_data",
         ),
     ],
@@ -308,13 +309,13 @@ async def test_options_flow_unchanged(
     """Test saving the default options does not reload the entry."""
     hass.config_entries.async_update_entry(
         init_integration,
-        options={OPTION_UPDATE_PERIOD_S: 10, OPTION_ENABLE_LIVE_DATA: False},
+        options={OPTION_UPDATE_PERIOD_S: 60, OPTION_ENABLE_LIVE_DATA: False},
     )
     coordinator = init_integration.runtime_data
     result = await hass.config_entries.options.async_init(init_integration.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {OPTION_UPDATE_PERIOD_S: 10, OPTION_ENABLE_LIVE_DATA: False},
+        {OPTION_UPDATE_PERIOD_S: 60, OPTION_ENABLE_LIVE_DATA: False},
     )
     await hass.async_block_till_done()
 
@@ -329,8 +330,14 @@ async def test_options_flow_min_interval(
     result = await hass.config_entries.options.async_init(init_integration.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {OPTION_UPDATE_PERIOD_S: 0, OPTION_ENABLE_LIVE_DATA: False},
+        {
+            OPTION_UPDATE_PERIOD_S: OPTION_UPDATE_PERIOD_S_MIN_VALUE - 1,
+            OPTION_ENABLE_LIVE_DATA: False,
+        },
     )
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {OPTION_UPDATE_PERIOD_S: "MIN_INTERVAL"}
+    assert result["description_placeholders"] == {
+        "min_interval": str(OPTION_UPDATE_PERIOD_S_MIN_VALUE)
+    }
