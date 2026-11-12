@@ -132,7 +132,13 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         if discovery_info.ip_address.version != 4:
             return self.async_abort(reason="not_ipv4_address")
-        serial = discovery_info.properties["serialnum"]
+        # A PVS can advertise the serial numbers of other PVS units on the
+        # network, so the serial number is read from the PVS itself
+        try:
+            pvs = await validate_input(self.hass, discovery_info.host)
+        except PVSError:
+            return self.async_abort(reason="cannot_connect")
+        serial = pvs.serial_number
         await self.async_set_unique_id(serial)
         self.ip_address = discovery_info.host
         self._abort_if_unique_id_configured({CONF_HOST: self.ip_address})
