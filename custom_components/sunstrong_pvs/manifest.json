@@ -1,7 +1,7 @@
 {
   "domain": "sunstrong_pvs",
   "name": "PVS",
-  "codeowners": ["@shondll"],
+  "codeowners": ["@shondll", "@bzyx"],
   "config_flow": true,
   "dependencies": ["diagnostics"],
   "documentation": "https://github.com/SunStrong-Management/pvs-hass",
