@@ -18,7 +18,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlowWithConfigEntry,
+    OptionsFlowWithReload,
 )
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant, callback
@@ -82,7 +82,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> PVSOptionsFlowHandler:
         """Options flow handler for PVS."""
-        return PVSOptionsFlowHandler(config_entry)
+        return PVSOptionsFlowHandler()
 
     @callback
     def _async_generate_schema_host(self) -> vol.Schema:
@@ -303,7 +303,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
         return await self.async_step_user()
 
 
-class PVSOptionsFlowHandler(OptionsFlowWithConfigEntry):
+class PVSOptionsFlowHandler(OptionsFlowWithReload):
     """PVS config flow options handler."""
 
     async def async_step_init(
