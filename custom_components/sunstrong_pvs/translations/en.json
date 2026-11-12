@@ -213,6 +213,7 @@
     },
     "abort": {
       "already_configured": "Device is already configured",
+      "cannot_connect": "Failed to connect",
       "reauth_successful": "Re-authentication was successful",
       "reconfigure_successful": "Re-configuration was successful",
       "unique_id_mismatch": "The PVS at this address has a different serial number than the one configured."
