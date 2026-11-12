@@ -294,16 +294,3 @@ class PVSUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # A listen_once listener is removed when it fires
         self._stop_listener = None
         self.hass.async_create_task(self.async_shutdown())
-
-    @callback
-    def should_reload_on_options_update(self) -> bool:
-        """Return True if the live data option changed (requires entity reload)."""
-        new_live_data = self.entry.options.get(
-            OPTION_ENABLE_LIVE_DATA, OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE
-        )
-        return new_live_data != self.websocket_connected
-
-    @callback
-    def async_update_options(self) -> None:
-        """Update options that don't require a reload (e.g. poll interval)."""
-        self.update_interval = self._get_update_interval()
