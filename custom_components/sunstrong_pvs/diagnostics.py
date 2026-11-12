@@ -6,18 +6,18 @@ from dataclasses import asdict
 import logging
 from typing import Any
 
-from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.components.diagnostics import REDACTED, async_redact_data
+from homeassistant.const import CONF_NAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
 from .coordinator import PVSConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
-# Config entry keys that contain sensitive data
-TO_REDACT_CONFIG = {"password"}
+# The name, title and unique ID contain the serial number of the PVS
+TO_REDACT_CONFIG = {CONF_NAME, CONF_PASSWORD, "title", "unique_id"}
 
-# Data keys that could contain sensitive info
-TO_REDACT_DATA = {"mac", "serial_number", "sn"}
+TO_REDACT_DATA = {"mac", "serial_number", "sn", "/sys/info/lmac"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -29,7 +29,7 @@ async def async_get_config_entry_diagnostics(
 
     diag: dict[str, Any] = {
         "config_entry": async_redact_data(entry.as_dict(), TO_REDACT_CONFIG),
-        "pvs_serial": coordinator.pvs_serial_number,
+        "pvs_serial": REDACTED,
         "pvs_firmware": coordinator.pvs_firmware,
         "websocket_connected": coordinator.websocket_connected,
     }
@@ -43,19 +43,20 @@ async def async_get_config_entry_diagnostics(
     if pvs_data.gateway:
         data["gateway"] = asdict(pvs_data.gateway)
 
+    # Listed instead of keyed by their serial number, which is redacted
     if pvs_data.inverters:
-        data["inverters"] = {sn: asdict(inv) for sn, inv in pvs_data.inverters.items()}
+        data["inverters"] = [asdict(inv) for inv in pvs_data.inverters.values()]
 
     if pvs_data.meters:
-        data["meters"] = {sn: asdict(meter) for sn, meter in pvs_data.meters.items()}
+        data["meters"] = [asdict(meter) for meter in pvs_data.meters.values()]
 
     if pvs_data.ess:
-        data["ess"] = {sn: asdict(ess) for sn, ess in pvs_data.ess.items()}
+        data["ess"] = [asdict(ess) for ess in pvs_data.ess.values()]
 
     if pvs_data.transfer_switches:
-        data["transfer_switches"] = {
-            sn: asdict(ts) for sn, ts in pvs_data.transfer_switches.items()
-        }
+        data["transfer_switches"] = [
+            asdict(ts) for ts in pvs_data.transfer_switches.values()
+        ]
 
     data["raw"] = pvs_data.raw
 
