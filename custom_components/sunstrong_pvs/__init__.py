@@ -45,7 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, pvs.serial_number)},
         manufacturer="SunStrong Management",
-        name="PVS Gateway",
+        name=f"PVS {pvs.serial_number}",
         serial_number=pvs.serial_number,
     )
 
