@@ -11,10 +11,12 @@ from unittest.mock import AsyncMock, patch
 from aiohttp import ClientError
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from pytest_homeassistant_custom_component.test_util.aiohttp import (
     AiohttpClientMocker,
     AiohttpClientMockResponse,
 )
+from syrupy.assertion import SnapshotAssertion
 from yarl import URL
 
 from custom_components.sunstrong_pvs.const import DOMAIN
@@ -29,6 +31,16 @@ FIXTURES = Path(__file__).parent / "fixtures"
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Enable custom integrations in all tests."""
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """Return the snapshot fixture with the Home Assistant extension.
+
+    The Home Assistant plugin overrides the syrupy fixture only when it is
+    loaded after syrupy, which depends on the order of the installed packages.
+    """
+    return snapshot.use_extension(HomeAssistantSnapshotExtension)
 
 
 @pytest.fixture(params=["pvs6"])
