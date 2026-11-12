@@ -11,7 +11,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN, PLATFORMS
-from .coordinator import PVSUpdateCoordinator, PVSConfigEntry
+from .coordinator import PVSConfigEntry, PVSUpdateCoordinator
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: PVSConfigEntry) -> bool:

@@ -6,9 +6,8 @@ from collections.abc import Mapping
 import logging
 from typing import Any
 
-from pypvs.pvs import PVS
 from pypvs.exceptions import PVSAuthenticationError, PVSError
-
+from pypvs.pvs import PVS
 import voluptuous as vol
 
 from homeassistant.components import zeroconf
@@ -28,11 +27,11 @@ from homeassistant.helpers.typing import VolDictType
 from .const import (
     DOMAIN,
     INVALID_AUTH_ERRORS,
+    OPTION_ENABLE_LIVE_DATA,
+    OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE,
     OPTION_UPDATE_PERIOD_S,
     OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE,
     OPTION_UPDATE_PERIOD_S_MIN_VALUE,
-    OPTION_ENABLE_LIVE_DATA,
-    OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE,
 )
 
 _LOGGER = logging.getLogger(__name__)
