@@ -8,10 +8,10 @@ import datetime
 import logging
 from operator import attrgetter
 
+from pypvs.models.ess import PVSESS
+from pypvs.models.gateway import PVSGateway
 from pypvs.models.inverter import PVSInverter
 from pypvs.models.meter import PVSMeter
-from pypvs.models.gateway import PVSGateway
-from pypvs.models.ess import PVSESS
 from pypvs.models.transfer_switch import PVSTransferSwitch
 
 from homeassistant.components.sensor import (
@@ -24,17 +24,17 @@ from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
     UnitOfApparentPower,
-    UnitOfReactivePower,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
     UnitOfEnergy,
     UnitOfFrequency,
     UnitOfPower,
+    UnitOfReactivePower,
     UnitOfTemperature,
     UnitOfTime,
 )
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_NETWORK_MAC
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -109,7 +109,7 @@ INVERTER_SENSORS = (
         translation_key=LAST_REPORTED_KEY,
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda inverter: datetime.datetime.fromtimestamp(
-            inverter.last_report_date, tz=datetime.timezone.utc
+            inverter.last_report_date, tz=datetime.UTC
         ),
     ),
     PVSInverterSensorEntityDescription(

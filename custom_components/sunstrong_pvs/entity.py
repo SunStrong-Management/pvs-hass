@@ -1,6 +1,7 @@
 """Support for PVS gateway."""
 
 from __future__ import annotations
+
 from typing import Any
 
 from homeassistant.helpers import device_registry as dr

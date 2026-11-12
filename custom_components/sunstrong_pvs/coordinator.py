@@ -3,30 +3,30 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import timedelta
+import logging
 from typing import Any
 
+from pypvs.exceptions import PVSAuthenticationError, PVSError
 from pypvs.pvs import PVS
 from pypvs.pvs_websocket import ConnectionState
-from pypvs.exceptions import PVSAuthenticationError, PVSError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
-    EVENT_HOMEASSISTANT_STOP,
     EVENT_HOMEASSISTANT_STARTED,
+    EVENT_HOMEASSISTANT_STOP,
 )
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
-    OPTION_UPDATE_PERIOD_S,
-    OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE,
     OPTION_ENABLE_LIVE_DATA,
     OPTION_ENABLE_LIVE_DATA_DEFAULT_VALUE,
+    OPTION_UPDATE_PERIOD_S,
+    OPTION_UPDATE_PERIOD_S_DEFAULT_VALUE,
 )
 
 _LOGGER = logging.getLogger(__name__)

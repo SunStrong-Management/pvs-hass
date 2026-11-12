@@ -217,12 +217,25 @@ This project includes a [devcontainer](https://containers.dev/) configuration fo
 | `scripts/develop` | Starts Home Assistant in debug mode with the custom component |
 | `scripts/lint` | Formats and lints the codebase with [Ruff](https://docs.astral.sh/ruff/) |
 
+### Tests
+
+The tests use [pytest-homeassistant-custom-component](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component), which installs the Home Assistant version it was built for, so use a separate virtual environment:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements_test.txt
+.venv/bin/pytest
+```
+
+The tests run pypvs against a mocked PVS that answers from the varserver variables in `tests/fixtures/`. After an intended change to the entities, update the snapshots with `.venv/bin/pytest --snapshot-update` and review the changes in `tests/snapshots/`.
+
 ### Project layout
 
 ```
 custom_components/sunstrong_pvs/   # The integration source code
 config/                            # HA config directory (created on first run, gitignored)
 scripts/                           # Development helper scripts
+tests/                             # Tests, PVS fixtures and snapshots
 ```
 
 ### Tips
