@@ -71,6 +71,23 @@ async def test_user_flow(
     assert len(mock_setup_entry.mock_calls) == 1
 
 
+@pytest.mark.usefixtures("mock_pvs")
+async def test_user_flow_already_configured(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Test adding an already configured PVS aborts."""
+    mock_config_entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_HOST: HOST}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+
+
 @pytest.mark.usefixtures("mock_setup_entry")
 async def test_user_flow_cannot_connect(hass: HomeAssistant, mock_pvs: MockPVS) -> None:
     """Test an unreachable PVS shows an error and the flow can recover."""

@@ -211,6 +211,7 @@ class PVSConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._abort_if_unique_id_mismatch()
                 elif not self.unique_id:
                     await self.async_set_unique_id(pvs.serial_number)
+                    self._abort_if_unique_id_configured()
                     name = self._async_pvs_name()
 
                 if CONF_PASSWORD not in user_input:
