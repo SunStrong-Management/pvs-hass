@@ -747,7 +747,7 @@ class PVSGatewayEntity(PVSSensorBaseEntity):
             connections={(CONNECTION_NETWORK_MAC, gateway.mac)},
             manufacturer="SunStrong Management",
             model=gateway.model,
-            name="PVS Gateway",
+            name=f"PVS {self.pvs_serial_num}",
             sw_version=gateway.software_version,
             hw_version=gateway.hardware_version,
             serial_number=self.pvs_serial_num,
@@ -951,7 +951,7 @@ class PVSLiveDataEntity(PVSSensorBaseEntity):
             identifiers={(DOMAIN, f"{self.pvs_serial_num}_livedata")},
             manufacturer="SunStrong Management",
             model="PVS Live Data",
-            name="PVS Live Data",
+            name=f"PVS {self.pvs_serial_num} Live Data",
             via_device_id=self.pvs_device_id,
         )
 
