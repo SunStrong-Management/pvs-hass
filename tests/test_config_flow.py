@@ -321,3 +321,6 @@ async def test_options_flow_min_interval(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {OPTION_UPDATE_PERIOD_S: "MIN_INTERVAL"}
+    assert result["description_placeholders"] == {
+        "min_interval": str(OPTION_UPDATE_PERIOD_S_MIN_VALUE)
+    }
